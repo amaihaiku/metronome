@@ -1,0 +1,1248 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Metronome Studio</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,500;9..40,700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+/* ── RESET ── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+button,select,input{font-family:inherit;border:none;outline:none;background:none;cursor:pointer;}
+
+/* ── TOKENS ── */
+:root{
+  --gold:#c9a84c;
+  --gold-b:#e8c96a;
+  --bg0:#050507;
+  --bg2:#070709;
+  --bsub:#191920;
+  --bmid:#22222c;
+  --thi:#e2e2ea;
+  --tmd:#7a7a90;
+  --tlo:#3e3e52;
+  --ui:'DM Sans',sans-serif;
+  --mono:'Share Tech Mono',monospace;
+  --r:16px;
+  --gap:7px;
+}
+
+/* ── BODY ── */
+html,body{
+  width:100%;height:100%;
+  background:var(--bg0);
+  font-family:var(--ui);
+  -webkit-font-smoothing:antialiased;
+  touch-action:manipulation;
+  overflow:hidden;
+  display:flex;align-items:center;justify-content:center;
+}
+
+/* ── DEVICE SHELL ──
+   Nincs max-height — teljesen kitölti a kijelzőt
+   max-width=430px, hogy széles képernyőn ne legyen szétnyújtva */
+.shell{
+  width:min(100vw,430px);
+  height:100dvh;
+  background:linear-gradient(155deg,#13131c 0%,#09090c 55%,#0e0e14 100%);
+  border:1px solid #1e1e28;
+  border-radius:28px;
+  box-shadow:0 28px 70px rgba(0,0,0,.92),inset 0 1px 0 rgba(255,255,255,.035);
+  display:flex;
+  flex-direction:column;
+  padding:18px 14px 14px;
+  gap:var(--gap);
+  position:relative;
+  user-select:none;
+  overflow:hidden;
+}
+
+/* ── RACK SCREWS ── */
+.screw{
+  position:absolute;width:11px;height:11px;border-radius:50%;
+  background:radial-gradient(circle at 38% 38%,#26262e,#0c0c10);
+  border:1px solid #18181f;
+  box-shadow:inset 0 1px 3px rgba(0,0,0,.85);
+  pointer-events:none;z-index:5;
+}
+.screw::after{
+  content:'';position:absolute;top:50%;left:50%;
+  width:5px;height:1px;background:#0a0a0e;
+  transform:translate(-50%,-50%) rotate(42deg);border-radius:1px;
+}
+
+/* ── PANEL (mélyített) ── */
+.panel{
+  background:var(--bg2);
+  border:1px solid var(--bsub);
+  box-shadow:inset 0 3px 9px rgba(0,0,0,.88),0 1px 0 rgba(255,255,255,.02);
+  border-radius:var(--r);
+  flex-shrink:0;
+}
+
+/* ── TIPOGRÁFIA ── */
+.lbl{
+  font-size:9px;font-weight:700;
+  letter-spacing:.22em;text-transform:uppercase;
+  color:#585870; /* visszafogott szürke — olvasható de nem zavaró */
+}
+/* .lbl-panel: panel/szekció fejléc — ugyanolyan mint STABIL CLK */
+.lbl-panel{
+  font-size:11px;font-weight:700;
+  letter-spacing:.16em;text-transform:uppercase;
+  color:#6a6a82;
+}
+.lbl-md{
+  font-size:11px;font-weight:600;
+  letter-spacing:.14em;text-transform:uppercase;
+  color:var(--tmd);
+}
+
+/* ── FEJLÉC ── */
+.header{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:0 18px;flex-shrink:0;
+}
+.clk-badge{
+  display:flex;align-items:center;gap:6px;
+  background:var(--bg2);border:1px solid var(--bsub);
+  padding:5px 12px;border-radius:10px;
+}
+
+/* ── LED GRID — magasabb ── */
+.led-grid{
+  padding:12px 16px 14px;  /* volt: 8/12/10 → most több tér */
+}
+.led-row{display:flex;justify-content:space-between;}
+.led-row+.led-row{margin-top:10px;}  /* volt 7 → 10 */
+.led-sock{
+  width:20px;height:20px;border-radius:50%;  /* volt 17px → 20px */
+  background:#040406;border:1px solid #10101a;
+  box-shadow:inset 0 2px 4px rgba(0,0,0,.9);
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.led-inner{
+  width:10px;height:10px;border-radius:50%;  /* volt 8px → 10px */
+  background:#181828;transition:all 70ms;
+}
+.led-off{
+  width:20px;height:20px;border-radius:50%;
+  background:#030305;border:1px solid #0c0c12;flex-shrink:0;
+}
+
+/* ── BPM PANEL ── */
+.bpm-panel{
+  padding:10px 16px 12px;
+  display:flex;flex-direction:column;align-items:center;gap:8px;
+}
+.bpm-row{
+  display:flex;align-items:center;justify-content:space-between;width:100%;
+}
+#bpm-display{
+  font-family:var(--mono);
+  font-size:clamp(3.2rem,11vw,4rem);
+  line-height:1;letter-spacing:.03em;
+  color:var(--gold-b);
+  text-shadow:0 0 22px rgba(201,168,76,.4),0 0 4px rgba(201,168,76,.55);
+}
+.btn-pm{
+  width:40px;height:40px;border-radius:12px;
+  background:linear-gradient(to bottom,#1c1c26,#101014);
+  border:1px solid #20202c;
+  box-shadow:0 3px 8px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.04);
+  display:flex;align-items:center;justify-content:center;
+  font-size:22px;color:var(--tmd);
+  transition:transform 70ms;
+}
+.btn-pm:active{transform:scale(.9);}
+.slider-wrap{
+  width:100%;background:var(--bg0);border:1px solid var(--bsub);
+  border-radius:8px;padding:0 10px;height:20px;
+  display:flex;align-items:center;
+  box-shadow:inset 0 2px 6px rgba(0,0,0,.8);
+}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;background:transparent;height:4px;}
+input[type=range]::-webkit-slider-runnable-track{
+  height:2px;background:linear-gradient(to right,var(--bmid),var(--bsub));border-radius:1px;
+}
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;
+  width:26px;height:13px;border-radius:4px;
+  background:linear-gradient(to right,#242430 0%,#181820 46%,var(--gold) 50%,#181820 54%,#242430 100%);
+  border:1px solid #080810;cursor:pointer;
+  box-shadow:0 2px 6px rgba(0,0,0,.5);margin-top:-6px;
+}
+
+/* ── WHEEL PANEL — alacsonyabb ── */
+.wheel-panel{
+  padding:8px 10px 10px;
+  display:flex;flex-direction:column;gap:5px;
+}
+.wheel-grid{display:flex;align-items:flex-start;gap:6px;}
+.wheel-left-wrap{display:flex;flex-direction:column;flex:5;}
+.wheel-left{display:flex;align-items:flex-end;gap:0;}
+.wheel-right{display:flex;flex-direction:column;align-items:center;gap:0;flex:7;}
+.wheel-col{display:flex;flex-direction:column;align-items:center;gap:4px;flex:1;}
+.wheel-box{
+  width:100%;height:60px;  /* volt 68px → 60px, alacsonyabb görgő */
+  border-radius:10px;overflow:hidden;position:relative;
+  background:var(--bg0);border:1px solid var(--bsub);
+  box-shadow:inset 0 3px 9px rgba(0,0,0,.8);
+}
+.wheel-lines{pointer-events:none;position:absolute;inset:0;z-index:10;}
+.wheel-lines::before,.wheel-lines::after{
+  content:'';position:absolute;left:8px;right:8px;height:1px;
+  background:linear-gradient(to right,transparent,rgba(201,168,76,.38),transparent);
+}
+.wheel-lines::before{top:calc(50% - 16px);}
+.wheel-lines::after{top:calc(50% + 16px);}
+.wheel-scroll{
+  height:100%;overflow-y:scroll;scroll-snap-type:y mandatory;text-align:center;
+  -ms-overflow-style:none;scrollbar-width:none;
+}
+.wheel-scroll::-webkit-scrollbar{display:none;}
+.wi{
+  height:32px;display:flex;align-items:center;justify-content:center;
+  scroll-snap-align:center;flex-shrink:0;
+  font-family:var(--mono);font-size:11px;color:var(--tlo);
+  transition:all 65ms;cursor:pointer;
+}
+.slash{
+  font-size:18px;font-weight:300;color:rgba(201,168,76,.45);
+  font-family:var(--mono);
+  height:60px;display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;width:16px;
+  align-self:flex-end;
+}
+.wheel-sep{width:1px;background:var(--bsub);align-self:stretch;flex-shrink:0;margin-top:20px;}
+
+/* ── SOUND PANEL ── */
+.sound-panel{
+  padding:10px 14px;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.snd-group{
+  display:flex;gap:3px;padding:4px;
+  background:var(--bg0);border:1px solid var(--bsub);border-radius:12px;
+}
+.snd-btn{
+  font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
+  padding:6px 0;width:56px;border-radius:8px;
+  color:#6a6a82;transition:all 90ms;
+}
+.snd-btn.on{background:#1a1a26;color:var(--gold-b);border:1px solid #28283a;}
+
+/* ── BOTTOM ── */
+.bottom{display:flex;gap:8px;flex-shrink:0;}
+.tap-btn{
+  flex:2;padding:0;min-height:56px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+  background:linear-gradient(to bottom,#1c1c26,#101014);
+  border:1px solid #20202c;border-radius:14px;
+  box-shadow:0 3px 8px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.04);
+  transition:transform 70ms;
+}
+.tap-btn:active{transform:scale(.93);}
+#start-btn{
+  flex:5;min-height:56px;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  background:var(--gold);border-radius:14px;
+  box-shadow:0 4px 18px rgba(201,168,76,.12),0 2px 5px rgba(0,0,0,.45);
+  transition:all 110ms;
+}
+#start-btn:active{transform:scale(.97);}
+#start-btn.playing{
+  background:#141420;border:1px solid #5a1a1a;
+  box-shadow:0 0 0 1px rgba(255,80,80,.15);
+}
+
+
+/* ── HANGOLÓGÉP ── */
+.tuner-panel{
+  padding:10px 10px 12px;
+  display:flex;align-items:stretch;gap:10px;
+  flex:1;min-height:0;
+}
+
+/* ── AKTIVÁLÓ GOMB (hangvilla) ── */
+.tuner-toggle{
+  width:46px;flex-shrink:0;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;
+  background:linear-gradient(to bottom,#1a1a24,#0e0e14);
+  border:1px solid #22222e;border-radius:12px;
+  cursor:pointer;transition:all 100ms;padding:10px 0;
+}
+.tuner-toggle:active{transform:scale(.93);}
+.tuner-toggle.active{
+  background:linear-gradient(to bottom,#142018,#0b1209);
+  border-color:#2a5028;
+  box-shadow:0 0 16px rgba(60,200,60,.15),inset 0 0 8px rgba(60,200,60,.04);
+}
+.tf-icon{transition:all 120ms;}
+.tuner-toggle.active .tf-icon path,
+.tuner-toggle.active .tf-icon line{stroke:#3ecf3e;}
+.tuner-toggle-lbl{
+  font-size:6.5px;font-weight:700;letter-spacing:.16em;
+  text-transform:uppercase;color:#6a6a82;transition:color 120ms;
+  writing-mode:vertical-rl;transform:rotate(180deg);
+  line-height:1;
+}
+.tuner-toggle.active .tuner-toggle-lbl{color:#3ecf3e;}
+
+/* ── KIJELZŐ TERÜLET ── */
+.tuner-display{
+  flex:1;min-width:0;
+  display:flex;flex-direction:column;
+  opacity:.22;transition:opacity 200ms;pointer-events:none;
+}
+.tuner-display.on{opacity:1;pointer-events:auto;}
+
+/* Inaktív üzenet */
+.tuner-inactive-msg{
+  flex:1;display:flex;align-items:center;justify-content:center;
+  font-size:10px;font-weight:700;letter-spacing:.2em;
+  color:var(--tlo);text-transform:uppercase;
+}
+
+/* Aktív tartalom */
+#tuner-active-content{
+  flex:1;display:none;flex-direction:column;
+  align-items:center;justify-content:space-between;
+  padding:4px 0 2px;gap:0;
+  width:100%;
+}
+
+/* Hangnév + oktáv + Hz sor */
+.t-top-row{
+  display:flex;align-items:baseline;justify-content:center;gap:6px;
+  width:100%;
+}
+#tuner-note{
+  font-family:var(--mono);font-size:2.4rem;line-height:1;
+  color:var(--thi);letter-spacing:.06em;
+  transition:color 80ms;
+}
+#tuner-octave{font-family:var(--mono);font-size:.9rem;color:var(--tmd);}
+#tuner-freq{
+  font-family:var(--mono);font-size:9px;letter-spacing:.1em;
+  color:var(--tlo);margin-left:4px;
+}
+
+/* ── LED BAR SKÁLA ──
+   21 LED: -50¢ .. 0 .. +50¢  (5 cent / LED)
+   Zöld zóna: ±10¢ → középső 4+1+4 = 9 LED
+   Sárga: ±10-25¢  Piros: >±25¢                    */
+.t-led-section{width:100%;}
+.t-led-label-row{
+  display:flex;justify-content:space-between;
+  padding:0 2px;margin-bottom:3px;
+}
+.t-led-label-row span{
+  font-family:var(--mono);font-size:7px;color:var(--tlo);
+  letter-spacing:.06em;
+}
+.t-led-bar{
+  display:flex;align-items:center;justify-content:center;
+  gap:3px;width:100%;
+}
+.t-led{
+  flex:1;height:14px;border-radius:3px;
+  background:#0e0e14;border:1px solid #1a1a22;
+  transition:background 60ms, box-shadow 60ms;
+}
+.t-led.lit-green{background:#2ecc2e;box-shadow:0 0 6px rgba(46,204,46,.7);}
+.t-led.lit-yellow{background:#e8c96a;box-shadow:0 0 6px rgba(232,201,106,.6);}
+.t-led.lit-red{background:#e84040;box-shadow:0 0 6px rgba(232,64,64,.6);}
+
+/* ── CENT ÉRTÉK + STATUS ── */
+.t-bottom-row{
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  width:100%;
+}
+#tuner-cents-val{
+  font-family:var(--mono);font-size:13px;font-weight:700;
+  color:var(--tmd);min-width:44px;text-align:center;
+  transition:color 80ms;letter-spacing:.06em;
+}
+#tuner-cents-val.intune{color:#3ecf3e;}
+#tuner-cents-val.sharp{color:#e8c96a;}
+#tuner-cents-val.flat{color:#7ab4e8;}
+#tuner-status{
+  font-size:8px;font-weight:700;letter-spacing:.18em;
+  text-transform:uppercase;color:var(--tlo);
+  transition:color 80ms;
+}
+#tuner-status.intune{color:#3ecf3e;}
+
+/* ── TOAST ── */
+#toast{
+  position:fixed;bottom:72px;left:50%;transform:translateX(-50%);
+  background:#09090d;border:1px solid #22222e;color:var(--gold-b);
+  padding:6px 16px;border-radius:12px;
+  font-size:9px;font-weight:700;letter-spacing:.22em;
+  opacity:0;transition:opacity 280ms;pointer-events:none;z-index:200;
+  white-space:nowrap;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   CURVED GLASS OVERLAY — visszafogott stúdió változat
+   Visszafogott él: a fehér highlight max 0.18 opacity (volt 0.50)
+   Minden panel saját --glass-* tokenekkel finomhangolható.
+   ════════════════════════════════════════════════════════════════ */
+
+/* Minden üvegezett frame: position:relative + isolation kötelező */
+.glass-frame{
+  position:relative;
+  isolation:isolate;
+  overflow:hidden;
+}
+
+/* A tartalom enyhe optikai távolságot kap az üvegtől */
+.glass-screened{
+  filter:blur(0.28px) brightness(0.97);
+  transform:translateZ(0);
+}
+
+/* ── Fő overlay elem ── */
+.cg-overlay{
+  pointer-events:none;
+  position:absolute;
+  inset:0;
+  border-radius:inherit;
+  z-index:50;
+
+  /* Konvex fényreflexió: nagy ellipszis középpontja az elem FELETT van.
+     Így csak az ív alsó széle látszik — pontosan mint valódi domború üvegen. */
+  background:
+    radial-gradient(
+      ellipse var(--g-arc-w,155%) var(--g-arc-h,82%)
+      at var(--g-arc-x,50%) var(--g-arc-y,-38%),
+      rgba(255,255,255,calc(var(--g-gloss,0.55) * 0.46)) 0%,
+      rgba(255,255,255,calc(var(--g-gloss,0.55) * 0.18)) 30%,
+      rgba(255,255,255,calc(var(--g-gloss,0.55) * 0.05)) 58%,
+      transparent 75%
+    ),
+    /* Alsó él másodlagos reflexió — konvex lencse visszaverés */
+    radial-gradient(
+      ellipse 85% 35% at 50% 115%,
+      rgba(255,255,255,calc(var(--g-gloss,0.55) * 0.06)) 0%,
+      transparent 60%
+    ),
+    var(--g-tint,transparent);
+
+  mix-blend-mode:screen;
+}
+
+/* ── 3D bevel réteg (::before) ──
+   VISSZAFOGOTT: a legfényesebb pixel is csak 0.18 white opacity.
+   Stúdió üvegnél az él nem tükörfényes — csak halványan csillog. */
+.cg-overlay::before{
+  content:'';
+  position:absolute;
+  inset:0;
+  border-radius:inherit;
+  box-shadow:
+    /* Bal-felső él highlight — 3 finom réteg */
+    inset  1px  1px 0  rgba(255,255,255,calc(var(--g-bevel,0.7) * 0.18)),
+    inset  2px  2px 0  rgba(255,255,255,calc(var(--g-bevel,0.7) * 0.08)),
+    inset  3px  3px 0  rgba(255,255,255,calc(var(--g-bevel,0.7) * 0.03)),
+    /* Jobb-alsó él árnyék */
+    inset -1px -1px 0  rgba(0,0,0,calc(var(--g-bevel,0.7) * 0.50)),
+    inset -2px -2px 0  rgba(0,0,0,calc(var(--g-bevel,0.7) * 0.22)),
+    inset -3px -3px 0  rgba(0,0,0,calc(var(--g-bevel,0.7) * 0.08)),
+    /* Külső keret árnyék */
+    0 0 0 1px rgba(0,0,0,0.55);
+  mix-blend-mode:normal;
+}
+
+/* ── Mikro textúra (por/karcolás) — ::after ── */
+.cg-overlay::after{
+  content:'';
+  position:absolute;
+  inset:0;
+  border-radius:inherit;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  opacity:var(--g-dust,0.015);
+  mix-blend-mode:overlay;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   PANEL-SPECIFIKUS ÜVEG TOKENEK
+   Minden keretnek saját jellemzői vannak:
+   - A fejléc badge apró, szoros üveg
+   - Az LED panel lapos és széles → alacsonyabb ív
+   - A BPM kijelző mély és sötét → erősebb reflexió
+   - A görgős panel kisebb elemek → finomabb bevel
+   ════════════════════════════════════════════════════════════════ */
+
+/* LED indikátor panel — széles, lapos */
+.glass-led{
+  --g-gloss:0.48;
+  --g-arc-y:-52%;
+  --g-arc-w:140%;
+  --g-arc-h:95%;
+  --g-bevel:0.65;
+  --g-dust:0.012;
+}
+
+/* BPM kijelző — mélyebb, intenzívebb */
+.glass-bpm{
+  --g-gloss:0.62;
+  --g-arc-y:-42%;
+  --g-arc-x:48%;
+  --g-arc-w:148%;
+  --g-arc-h:80%;
+  --g-bevel:0.75;
+  --g-dust:0.018;
+}
+
+/* Görgős ütemjelző panel — kompakt */
+.glass-wheel{
+  --g-gloss:0.44;
+  --g-arc-y:-45%;
+  --g-arc-w:160%;
+  --g-arc-h:90%;
+  --g-bevel:0.60;
+  --g-dust:0.010;
+}
+
+/* Hangminta panel — lapos és keskeny */
+.glass-sound{
+  --g-gloss:0.38;
+  --g-arc-y:-60%;
+  --g-arc-w:130%;
+  --g-arc-h:100%;
+  --g-bevel:0.55;
+  --g-dust:0.010;
+}
+
+/* Hangológép panel — flex:1, kissé mélyebb */
+.glass-tuner{
+  --g-gloss:0.52;
+  --g-arc-y:-38%;
+  --g-arc-x:46%;
+  --g-arc-w:145%;
+  --g-arc-h:85%;
+  --g-bevel:0.68;
+  --g-dust:0.014;
+}
+
+/* TAP gomb egyedi kis üveg */
+.glass-tap{
+  --g-gloss:0.35;
+  --g-arc-y:-50%;
+  --g-arc-w:180%;
+  --g-arc-h:100%;
+  --g-bevel:0.50;
+  --g-dust:0.008;
+}
+
+</style>
+</head>
+<body>
+
+<div class="shell">
+  <!-- Sarokcsavarok -->
+  <div class="screw" style="top:8px;left:8px;"></div>
+  <div class="screw" style="top:8px;right:8px;"></div>
+  <div class="screw" style="bottom:8px;left:8px;"></div>
+  <div class="screw" style="bottom:8px;right:8px;"></div>
+
+  <!-- FEJLÉC -->
+  <div class="header">
+    <div>
+      <div class="lbl" style="margin-bottom:2px;">Precision Studio Gear</div>
+      <div style="font-size:15px;font-weight:700;letter-spacing:.2em;color:var(--thi);">METRONOME STUDIO</div>
+    </div>
+    <div class="clk-badge">
+      <span id="system-led" style="width:7px;height:7px;border-radius:50%;background:rgba(201,168,76,.22);display:block;flex-shrink:0;transition:all 80ms;"></span>
+      <span class="lbl-md" style="color:var(--tmd);">STABIL CLK</span>
+    </div>
+  </div>
+
+  <!-- LED INDIKÁTOR 2×6 -->
+  <div class="panel led-grid glass-frame glass-led">
+    <div class="lbl-panel" style="text-align:center;margin-bottom:8px;">ÜTEM INDIKÁTOR</div>
+    <div id="led-row-1" class="led-row"></div>
+    <div id="led-row-2" class="led-row"></div>
+    <div class="cg-overlay"></div>
+  </div>
+
+  <!-- BPM KIJELZŐ -->
+  <div class="panel bpm-panel glass-frame glass-bpm">
+    <div class="lbl-panel">TEMPÓ</div>
+    <div class="bpm-row">
+      <button class="btn-pm" id="bpm-minus">−</button>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:3px;">
+        <span id="bpm-display">120</span>
+        <span class="lbl-md" style="color:var(--gold);opacity:.65;">ÜTÉS / PERC</span>
+      </div>
+      <button class="btn-pm" id="bpm-plus">+</button>
+    </div>
+    <div class="slider-wrap" style="width:100%;">
+      <input type="range" id="bpm-slider" min="40" max="250" value="120">
+    </div>
+    <div class="cg-overlay"></div>
+  </div>
+
+  <!-- ÜTEM GÖRGŐK -->
+  <div class="panel wheel-panel glass-frame glass-wheel">
+    <div class="wheel-grid">
+
+      <!-- BAL: "ÜTEM" fejléc középre, alatta számláló + "/" + nevező -->
+      <div class="wheel-left-wrap">
+        <div class="lbl-panel" style="text-align:center;margin-bottom:4px;">ÜTEM</div>
+        <div class="wheel-left">
+          <div class="wheel-col">
+            <div class="wheel-box">
+              <div class="wheel-lines"></div>
+              <div id="wheel-numerator" class="wheel-scroll"></div>
+            </div>
+          </div>
+          <div class="slash">/</div>
+          <div class="wheel-col">
+            <div class="wheel-box">
+              <div class="wheel-lines"></div>
+              <div id="wheel-denominator" class="wheel-scroll"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Elválasztó -->
+      <div class="wheel-sep"></div>
+
+      <!-- JOBB: Ritmusosztás -->
+      <div class="wheel-right">
+        <div class="lbl-panel" style="margin-bottom:4px;">RITMUSOSZTÁS</div>
+        <div class="wheel-box" style="width:100%;">
+          <div class="wheel-lines"></div>
+          <div id="wheel-split" class="wheel-scroll"></div>
+        </div>
+      </div>
+
+    </div>
+    <div class="cg-overlay"></div>
+  </div>
+
+  <!-- HANGMINTA -->
+  <div class="panel sound-panel glass-frame glass-sound">
+    <span class="lbl-panel">HANGMINTA</span>
+    <div class="snd-group">
+      <button class="snd-btn on" data-sound="wood">FA</button>
+      <button class="snd-btn" data-sound="beep">SZINTI</button>
+      <button class="snd-btn" data-sound="snare">DIGIT.</button>
+    </div>
+  </div>
+
+  <!-- HANGOLÓGÉP (kromatikus, LED-es) -->
+  <div class="panel tuner-panel glass-frame glass-tuner" id="tuner-panel">
+
+    <!-- AKTIVÁLÓ GOMB — hangvilla ikon -->
+    <button class="tuner-toggle" id="tuner-toggle" title="Kromatikus hangológép">
+      <!-- Hangvilla (tuning fork) SVG -->
+      <svg class="tf-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <!-- Két ág -->
+        <path d="M8 3 C8 3 7 5 7 8 C7 11 9 12.5 11 13 L11 21" stroke="#3e3e52" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M16 3 C16 3 17 5 17 8 C17 11 15 12.5 13 13 L13 21" stroke="#3e3e52" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+        <!-- Összekötő alap -->
+        <line x1="11" y1="21" x2="13" y2="21" stroke="#3e3e52" stroke-width="1.6" stroke-linecap="round"/>
+        <!-- Fej teteje -->
+        <line x1="8" y1="3" x2="16" y2="3" stroke="#3e3e52" stroke-width="1.6" stroke-linecap="round"/>
+      </svg>
+      <span class="tuner-toggle-lbl">HANGOLÁS</span>
+    </button>
+
+    <!-- KIJELZŐ -->
+    <div class="tuner-display" id="tuner-display">
+
+      <div class="tuner-inactive-msg" id="tuner-inactive-msg">NYOMD MEG A HANGVILLÁT</div>
+
+      <div id="tuner-active-content">
+
+        <!-- Hangnév + oktáv + Hz -->
+        <div class="t-top-row">
+          <span id="tuner-note">—</span>
+          <span id="tuner-octave"></span>
+          <span id="tuner-freq">— Hz</span>
+        </div>
+
+        <!-- LED skála
+             21 LED: index 0=−50¢ … 10=0¢ … 20=+50¢  (5¢/LED)
+             ±10¢ (index 8-12) = zöld zóna  "jó hangolás"
+             ±10–25¢ (5-7, 13-15) = sárga
+             >±25¢ (0-4, 16-20) = piros                         -->
+        <div class="t-led-section">
+          <div class="t-led-label-row">
+            <span>−50¢</span>
+            <span>−25¢</span>
+            <span style="color:var(--tmd);">0</span>
+            <span>+25¢</span>
+            <span>+50¢</span>
+          </div>
+          <div class="t-led-bar" id="tuner-led-bar">
+            <!-- 21 LED div JS-ből töltődik -->
+          </div>
+        </div>
+
+        <!-- Cent érték + státusz szöveg -->
+        <div class="t-bottom-row">
+          <span id="tuner-cents-val">0 ¢</span>
+          <span id="tuner-status">—</span>
+        </div>
+
+      </div><!-- /active-content -->
+    </div><!-- /tuner-display -->
+    <div class="cg-overlay"></div>
+  </div><!-- /tuner-panel -->
+
+  <!-- TAP + START -->
+  <div class="bottom">
+    <button class="tap-btn glass-frame glass-tap" id="tap-btn" style="overflow:hidden;">
+      <span style="font-size:13px;font-weight:700;letter-spacing:.22em;color:var(--tmd);">TAP</span>
+      <span class="lbl-md" style="color:var(--gold);">TEMPÓ</span>
+      <div class="cg-overlay"></div>
+    </button>
+    <button id="start-btn" class="glass-frame" style="--g-gloss:0.30;--g-arc-y:-55%;--g-arc-w:120%;--g-bevel:0.45;--g-dust:0.006;">
+      <svg id="play-icon" width="12" height="12" style="fill:#050507;" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+      <svg id="stop-icon" width="12" height="12" style="fill:#ff5555;display:none;" viewBox="0 0 24 24"><path d="M6 19h12V5H6v14z"/></svg>
+      <span id="start-btn-text" style="font-size:13px;font-weight:700;letter-spacing:.22em;color:#050507;">INDÍTÁS</span>
+      <div class="cg-overlay"></div>
+    </button>
+  </div>
+
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════════════════════════
+//  ÜTEMFELOSZTÁSOK
+//  INVARIÁNS: minden [a,b] esetén a+b === numerátor (kivétel nélkül)
+//  A NEVEZŐ semmilyen hatással nincs az osztásra.
+// ══════════════════════════════════════════════════════════════
+const SPLIT_PRESETS = {
+  1: [[1,0]],
+  2: [[2,0]],
+  3: [[3,0]],
+  4: [[4,0],[2,2]],
+  5: [[3,2],[2,3]],
+  6: [[3,3],[4,2],[2,4],[6,0]],
+  7: [[4,3],[3,4],[5,2],[2,5]],
+  8: [[4,4],[5,3],[3,5],[6,2],[2,6]],
+  9: [[5,4],[4,5],[6,3],[3,6]],
+ 10: [[5,5],[6,4],[4,6]],
+ 11: [[6,5],[5,6]],
+ 12: [[6,6]]
+};
+
+function splitLabel(v) {
+  return v[1]===0 ? `${v[0]}` : `${v[0]} + ${v[1]}`;
+}
+
+// ── ÁLLAPOT ──
+const ITEM_H = 32;
+let audioCtx=null, isPlaying=false;
+let bpm=120, selNum=4, selDen=4;
+let activeSplit=[4,0];   // INVARIÁNS: [0]+[1]===selNum mindig
+let beat=0, lookahead=25, ahead=0.1, nextNote=0, timerId=null;
+let soundPro='wood';
+
+// ── DOM ──
+const startBtn  = document.getElementById('start-btn');
+const startTxt  = document.getElementById('start-btn-text');
+const playIco   = document.getElementById('play-icon');
+const stopIco   = document.getElementById('stop-icon');
+const bpmSlider = document.getElementById('bpm-slider');
+const bpmDisp   = document.getElementById('bpm-display');
+const bpmPlus   = document.getElementById('bpm-plus');
+const bpmMinus  = document.getElementById('bpm-minus');
+const tapBtn    = document.getElementById('tap-btn');
+const sysLed    = document.getElementById('system-led');
+const toast     = document.getElementById('toast');
+const row1      = document.getElementById('led-row-1');
+const row2      = document.getElementById('led-row-2');
+
+// ── TOAST ──
+function showToast(t) {
+  toast.innerText=t; toast.style.opacity='1';
+  setTimeout(()=>toast.style.opacity='0',1500);
+}
+
+// ── LED RAJZOLÁS ──
+function drawLEDs() {
+  row1.innerHTML=''; row2.innerHTML='';
+  const [top,bot]=activeSplit;
+  for(let i=0;i<6;i++){
+    const mk=(active)=>{
+      const d=document.createElement('div');
+      if(active){
+        d.className='led-sock';
+        d.dataset.active='1';
+        const s=document.createElement('span');
+        s.className='led-inner';
+        d.appendChild(s);
+      } else {
+        d.className='led-off';
+      }
+      return d;
+    };
+    row1.appendChild(mk(i<top));
+    row2.appendChild(mk(i<bot));
+  }
+}
+
+// ── DRUM PICKER ──
+class DrumPicker {
+  constructor(id,vals,def,cb){
+    this.el=document.getElementById(id);
+    this.vals=vals; this.cb=cb; this.sel=def; this._prog=false;
+    this.build(); this.bindEv(); this.goto(def,false);
+  }
+  build(){
+    let h=`<div style="height:18px;flex-shrink:0;"></div>`;
+    this.vals.forEach(v=>{
+      const lbl=Array.isArray(v)?splitLabel(v):String(v);
+      const vs=JSON.stringify(v);
+      h+=`<div class="wi" data-v='${vs}'>${lbl}</div>`;
+    });
+    h+=`<div style="height:18px;flex-shrink:0;"></div>`;
+    this.el.innerHTML=h;
+  }
+  goto(val,trig=true){
+    const vs=JSON.stringify(val);
+    const items=[...this.el.querySelectorAll('.wi')];
+    const idx=items.findIndex(e=>e.getAttribute('data-v')===vs);
+    if(idx<0)return;
+    this.sel=val; this._prog=true;
+    this.el.scrollTop=idx*ITEM_H;
+    this.refresh();
+    if(trig)this.cb(val);
+    setTimeout(()=>this._prog=false,140);
+  }
+  refresh(){
+    const ctr=this.el.scrollTop+this.el.clientHeight/2;
+    this.el.querySelectorAll('.wi').forEach(el=>{
+      const ic=el.offsetTop+el.clientHeight/2;
+      const off=(ic-ctr)/(this.el.clientHeight/2);
+      const abs=Math.abs(off);
+      el.style.transform=`perspective(85px) rotateX(${-off*52}deg) translateZ(${-22*abs}px) scale(${Math.max(.62,1.18-abs*.56)})`;
+      el.style.opacity=Math.max(.1,1-abs*.76);
+      const sel=Math.abs(ic-ctr)<ITEM_H/2;
+      el.style.fontSize=sel?'13px':'10px';
+      el.style.fontWeight=sel?'700':'400';
+      el.style.color=sel?'var(--gold-b)':'var(--tlo)';
+    });
+  }
+  bindEv(){
+    this.el.addEventListener('scroll',()=>{
+      this.refresh();
+      if(this._prog)return;
+      const idx=Math.round(this.el.scrollTop/ITEM_H);
+      const items=this.el.querySelectorAll('.wi');
+      if(items[idx]){
+        const p=JSON.parse(items[idx].getAttribute('data-v'));
+        if(JSON.stringify(p)!==JSON.stringify(this.sel)){this.sel=p;this.cb(p);}
+      }
+    });
+    this.el.addEventListener('click',e=>{
+      const item=e.target.closest('.wi');
+      if(!item)return;
+      const items=[...this.el.querySelectorAll('.wi')];
+      const idx=items.indexOf(item);
+      if(idx>=0)this.el.scrollTo({top:idx*ITEM_H,behavior:'smooth'});
+    });
+  }
+}
+
+// ── GÖRGŐK ──
+// numPick: változtatja selNum-ot és újraépíti a splitPick-et
+const numPick = new DrumPicker('wheel-numerator',[1,2,3,4,5,6,7,8,9,10,11,12],4,val=>{
+  selNum=val;
+  const presets=SPLIT_PRESETS[val].filter(p=>p[0]+p[1]===val);
+  splitPick.vals=presets;
+  splitPick.build();
+  splitPick.bindEv();
+  splitPick.goto(presets[0],true);
+});
+
+// denPick: CSAK selDen-t állítja — osztáshoz, LED-hez semmi köze
+const denPick = new DrumPicker('wheel-denominator',[2,4,8],4,val=>{
+  selDen=val;
+});
+
+const splitPick = new DrumPicker('wheel-split',SPLIT_PRESETS[4],[4,0],val=>{
+  if(!Array.isArray(val)||val[0]+val[1]!==selNum)return; // invariáns guard
+  activeSplit=val;
+  drawLEDs();
+  if(isPlaying)beat=0;
+});
+
+// ── BPM ──
+function updateBPM(v){
+  bpm=Math.max(40,Math.min(250,v));
+  bpmSlider.value=bpm;
+  bpmDisp.innerText=bpm;
+}
+bpmSlider.addEventListener('input',e=>updateBPM(+e.target.value));
+
+// Slider közép-snap: ha elengedéskor ±4 BPM-en belül van a
+// slider fizikai középértékéhez (145 = (40+250)/2), ne snap.
+// De ha a felhasználó a csúszka VIZUÁLIS közepét akarta elérni
+// és nem pontosan sikerült, segítünk:
+// → A csúszka thumb pixelpozícióját figyeljük: ha az elengedett
+//   érték a csúszka teljes szélességének ±3%-án belül van a
+//   középtől, ugorjunk a pontos matematikai középre (145).
+// Zeneileg viszont a "szép" közép 120 BPM (4/4 standard tempo),
+// ezért ±4 BPM-en belül 120-ra snappelünk.
+bpmSlider.addEventListener('change', e => {
+  const v = +e.target.value;
+  const mid = Math.round((+bpmSlider.min + +bpmSlider.max) / 2); // 145
+  const snapTarget = 120; // zenei közép
+  const snapZone = 4;     // ±4 BPM érzékenység
+  if(Math.abs(v - snapTarget) <= snapZone) updateBPM(snapTarget);
+});
+bpmPlus.addEventListener('click',()=>updateBPM(bpm+1));
+bpmMinus.addEventListener('click',()=>updateBPM(bpm-1));
+
+// ── TAP ──
+let tapT=[];
+tapBtn.addEventListener('click',()=>{
+  const n=performance.now();
+  tapT.push(n);if(tapT.length>4)tapT.shift();
+  if(tapT.length>1){
+    let s=0;for(let i=1;i<tapT.length;i++)s+=tapT[i]-tapT[i-1];
+    const c=Math.round(60000/(s/(tapT.length-1)));
+    if(c>=40&&c<=250)updateBPM(c);
+  }
+});
+
+// ── HANGMINTA ──
+document.querySelectorAll('.snd-btn').forEach(b=>b.addEventListener('click',()=>{
+  document.querySelectorAll('.snd-btn').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on');soundPro=b.dataset.sound;
+}));
+
+// ── AUDIO ENGINE ──
+function playTick(time,stepIdx){
+  const osc=audioCtx.createOscillator();
+  const gn=audioCtx.createGain();
+  osc.connect(gn);gn.connect(audioCtx.destination);
+  const[top,bot]=activeSplit;
+  const isT=stepIdx===0;
+  const isB=bot>0&&stepIdx===top;
+  let freq=600,decay=.03,gv=.42;
+  if(soundPro==='wood'){
+    osc.type='triangle';
+    if(isT){freq=1250;decay=.035;gv=.85;}
+    else if(isB){freq=900;decay=.030;gv=.65;}
+    else{freq=600;decay=.020;gv=.38;}
+  }else if(soundPro==='beep'){
+    osc.type='sine';
+    if(isT){freq=1000;decay=.060;gv=.80;}
+    else if(isB){freq=750;decay=.050;gv=.60;}
+    else{freq=500;decay=.040;gv=.34;}
+  }else{
+    osc.type='sawtooth';
+    if(isT){freq=1600;decay=.040;gv=.80;}
+    else if(isB){freq=1150;decay=.030;gv=.60;}
+    else{freq=800;decay=.020;gv=.33;}
+  }
+  osc.frequency.setValueAtTime(freq,time);
+  gn.gain.setValueAtTime(gv,time);
+  gn.gain.exponentialRampToValueAtTime(.001,time+decay);
+  osc.start(time);osc.stop(time+decay+.01);
+  const d=(time-audioCtx.currentTime)*1000;
+  setTimeout(()=>trigVis(stepIdx),Math.max(0,d));
+}
+
+function scheduler(){
+  while(nextNote<audioCtx.currentTime+ahead){
+    playTick(nextNote,beat);
+    const spb=60/bpm;
+    nextNote+=selDen===8?spb*.5:selDen===2?spb*2:spb;
+    beat++;
+    const total=activeSplit[0]+activeSplit[1];
+    if(beat>=total){beat=0;}
+  }
+  timerId=setTimeout(scheduler,lookahead);
+}
+
+// ── VIZUÁLOK ──
+function trigVis(stepIdx){
+  if(!isPlaying)return;
+  const[top,bot]=activeSplit;
+  for(let i=0;i<6;i++){
+    const l1=row1.children[i],l2=row2.children[i];
+    if(l1?.dataset.active&&l1.children[0])
+      l1.children[0].style.cssText='width:8px;height:8px;border-radius:50%;background:#181828;transition:all 70ms;';
+    if(l2?.dataset.active&&l2.children[0])
+      l2.children[0].style.cssText='width:8px;height:8px;border-radius:50%;background:#181828;transition:all 70ms;';
+  }
+  if(stepIdx<top){
+    const led=row1.children[stepIdx];
+    if(led?.dataset.active&&led.children[0]){
+      if(stepIdx===0){
+        led.children[0].style.cssText='width:10px;height:10px;border-radius:50%;background:#e8c96a;box-shadow:0 0 14px #e8c96a;transition:all 65ms;';
+        sysLed.style.cssText='width:7px;height:7px;border-radius:50%;background:#e8c96a;box-shadow:0 0 8px #e8c96a;display:block;';
+      }else{
+        led.children[0].style.cssText='width:8px;height:8px;border-radius:50%;background:#c8c8d8;box-shadow:0 0 6px rgba(210,210,240,.5);transition:all 65ms;';
+      }
+    }
+  }else{
+    const bi=stepIdx-top;
+    const led=row2.children[bi];
+    if(led?.dataset.active&&led.children[0]){
+      if(bi===0){
+        led.children[0].style.cssText='width:10px;height:10px;border-radius:50%;background:#ff9f43;box-shadow:0 0 14px #ff9f43;transition:all 65ms;';
+        sysLed.style.cssText='width:7px;height:7px;border-radius:50%;background:#ff9f43;box-shadow:0 0 8px #ff9f43;display:block;';
+      }else{
+        led.children[0].style.cssText='width:8px;height:8px;border-radius:50%;background:#c8c8d8;box-shadow:0 0 6px rgba(210,210,240,.5);transition:all 65ms;';
+      }
+    }
+  }
+  setTimeout(()=>{
+    sysLed.style.cssText='width:7px;height:7px;border-radius:50%;background:rgba(201,168,76,.22);display:block;transition:all 80ms;';
+  },85);
+}
+
+// ── START / STOP ──
+startBtn.addEventListener('click',()=>{
+  if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+  isPlaying=!isPlaying;
+  if(isPlaying){
+    beat=0;nextNote=audioCtx.currentTime+.05;
+    scheduler();
+    startTxt.innerText='LEÁLLÍTÁS';startTxt.style.color='#ff5555';
+    playIco.style.display='none';stopIco.style.display='block';
+    startBtn.classList.add('playing');
+    showToast('METRONÓM INDÍTVA');
+  }else{
+    clearTimeout(timerId);
+    startTxt.innerText='INDÍTÁS';startTxt.style.color='#050507';
+    playIco.style.display='block';stopIco.style.display='none';
+    startBtn.classList.remove('playing');
+    drawLEDs();
+    showToast('METRONÓM LEÁLLÍTVA');
+  }
+});
+
+
+
+// ══════════════════════════════════════════════════════════════════════
+//  KROMATIKUS HANGOLÓGÉP — LED-es kijelzővel
+//
+//  MÉRÉSI ELVEK:
+//  • Pontosság: parabola-interpolált autocorrelation → ~±0.5¢ belső érték
+//  • KIJELZÉSI simítás: 6 mérés mozgóátlaga → stabil, nem rázkódó
+//  • "JÓ" zóna: ±10¢ → zöld → elég széles, hogy ember el tudja érni
+//    (profi hangolók is ±5-10¢-t fogadnak el "jónak")
+//  • LED skála: 21 LED, 5¢/LED, középső = 0¢
+//    Zöld:  ±10¢  (9 középső LED)
+//    Sárga: ±10-25¢  (6 LED két oldalon)
+//    Piros: >±25¢  (6 LED két szélen)
+// ══════════════════════════════════════════════════════════════════════
+const NOTE_NAMES = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+const A4_FREQ = 440.0;
+
+// ── Pitch detection: autocorrelation + parabola interpoláció ──
+function detectPitch(buf, sampleRate) {
+  const SIZE = buf.length;
+  const rms = Math.sqrt(buf.reduce((s,v)=>s+v*v,0)/SIZE);
+  if(rms < 0.01) return -1;
+
+  const corr = new Float32Array(SIZE);
+  for(let lag=1; lag<SIZE; lag++){
+    let s=0;
+    for(let i=0; i<SIZE-lag; i++) s+=buf[i]*buf[i+lag];
+    corr[lag]=s;
+  }
+
+  // Első völgy utáni csúcs
+  let d=1;
+  while(d<SIZE-1 && corr[d]>corr[d+1]) d++;
+  let maxVal=-Infinity, maxIdx=d;
+  for(let i=d; i<SIZE; i++){
+    if(corr[i]>maxVal){maxVal=corr[i];maxIdx=i;}
+  }
+  if(maxVal<0.01||maxIdx<=1||maxIdx>=SIZE-1) return -1;
+
+  // Parabola interpoláció
+  const y0=corr[maxIdx-1],y1=corr[maxIdx],y2=corr[maxIdx+1];
+  const denom = 2*(2*y1-y0-y2);
+  const peak = denom===0 ? maxIdx : maxIdx - (y2-y0)/denom;
+  return sampleRate/peak;
+}
+
+function freqToNote(freq){
+  if(freq<=0||freq>4200) return null;
+  const semitones = 12*Math.log2(freq/A4_FREQ);
+  const midi = Math.round(semitones)+69;
+  const rawCents = (semitones-(midi-69))*100;
+  const note = NOTE_NAMES[((midi%12)+12)%12];
+  const octave = Math.floor(midi/12)-1;
+  return {note, octave, rawCents, freq};
+}
+
+// ── LED bar inicializálás ──
+const ledBar = document.getElementById('tuner-led-bar');
+const LED_COUNT = 21;  // 0=−50¢, 10=0¢, 20=+50¢
+const leds = [];
+(function buildLEDs(){
+  for(let i=0;i<LED_COUNT;i++){
+    const d=document.createElement('div');
+    d.className='t-led';
+    ledBar.appendChild(d);
+    leds.push(d);
+  }
+})();
+
+// ── Megjelenítés frissítése ──
+function updateLEDDisplay(smoothedCents){
+  const sc = Math.round(smoothedCents); // egész cent, stabil kijelzés
+
+  // LED-ek frissítése
+  // LED i → cent értéke: (i-10)*5
+  for(let i=0;i<LED_COUNT;i++){
+    const ledCent = (i-10)*5;  // -50, -45, ... 0, ... +45, +50
+    const dist = Math.abs(smoothedCents - ledCent);
+    const d = leds[i];
+    d.className='t-led';
+    if(dist < 5){  // ez a LED van "megvilágítva"
+      if(Math.abs(ledCent)<=10) d.classList.add('lit-green');
+      else if(Math.abs(ledCent)<=25) d.classList.add('lit-yellow');
+      else d.classList.add('lit-red');
+    }
+  }
+
+  // Cent érték szöveg
+  const centsEl = document.getElementById('tuner-cents-val');
+  const statusEl = document.getElementById('tuner-status');
+  const absCents = Math.abs(sc);
+  const sign = sc>=0?'+':'';
+  centsEl.textContent = `${sign}${sc} ¢`;
+
+  if(absCents<=10){
+    centsEl.className='intune'; statusEl.className='intune';
+    statusEl.textContent='HANGOLT ✓';
+  }else if(sc>10){
+    centsEl.className='sharp'; statusEl.className='';
+    statusEl.textContent='ÉLES';
+  }else{
+    centsEl.className='flat'; statusEl.className='';
+    statusEl.textContent='LAPOS';
+  }
+}
+
+// ── Állapot ──
+let tunerActive=false;
+let tunerStream=null, tunerSource=null, tunerAnalyser=null;
+let tunerAudioCtx=null, tunerRAF=null, tunerBuf=null;
+// Simítás: 6 mérés csúszóablaka
+const SMOOTH_WIN=6;
+let smoothBuf=[];
+
+const tunerToggleBtn    = document.getElementById('tuner-toggle');
+const tunerDisplay      = document.getElementById('tuner-display');
+const tunerInactiveMsg  = document.getElementById('tuner-inactive-msg');
+const tunerActiveContent= document.getElementById('tuner-active-content');
+const tunerNoteEl       = document.getElementById('tuner-note');
+const tunerOctaveEl     = document.getElementById('tuner-octave');
+const tunerFreqEl       = document.getElementById('tuner-freq');
+
+function tunerLoop(){
+  if(!tunerActive) return;
+  tunerAnalyser.getFloatTimeDomainData(tunerBuf);
+  const freq = detectPitch(tunerBuf, tunerAudioCtx.sampleRate);
+
+  if(freq>50 && freq<2000){
+    const info = freqToNote(freq);
+    if(info){
+      // Hang neve és Hz frissítése azonnal (ez stabil)
+      tunerNoteEl.textContent = info.note;
+      tunerOctaveEl.textContent = info.octave;
+      tunerFreqEl.textContent = info.freq.toFixed(1)+' Hz';
+
+      // Cent simítása csúszóátlaggal
+      smoothBuf.push(info.rawCents);
+      if(smoothBuf.length>SMOOTH_WIN) smoothBuf.shift();
+      const avg = smoothBuf.reduce((a,b)=>a+b,0)/smoothBuf.length;
+      updateLEDDisplay(avg);
+    }
+  } else {
+    // Csend / nincs hang → nem törlünk, csak lassítjuk a RAF-ot
+  }
+
+  tunerRAF = requestAnimationFrame(tunerLoop);
+}
+
+async function startTuner(){
+  try{
+    tunerStream = await navigator.mediaDevices.getUserMedia({
+      audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false,latency:0}
+    });
+    tunerAudioCtx = new(window.AudioContext||window.webkitAudioContext)();
+    tunerAnalyser = tunerAudioCtx.createAnalyser();
+    tunerAnalyser.fftSize=4096;  // nagyobb buffer = jobb basszus pontosság
+    tunerBuf = new Float32Array(tunerAnalyser.fftSize);
+    tunerSource = tunerAudioCtx.createMediaStreamSource(tunerStream);
+    tunerSource.connect(tunerAnalyser);
+    tunerLoop();
+  }catch(e){
+    showToast('MIKROFON HOZZÁFÉRÉS MEGTAGADVA');
+    deactivateTuner();
+  }
+}
+
+function stopTuner(){
+  cancelAnimationFrame(tunerRAF);
+  if(tunerSource){tunerSource.disconnect();tunerSource=null;}
+  if(tunerStream){tunerStream.getTracks().forEach(t=>t.stop());tunerStream=null;}
+  if(tunerAudioCtx){tunerAudioCtx.close();tunerAudioCtx=null;}
+  smoothBuf=[];
+}
+
+function activateTuner(){
+  if(isPlaying){
+    clearTimeout(timerId); isPlaying=false;
+    startTxt.innerText='INDÍTÁS';startTxt.style.color='#050507';
+    playIco.style.display='block';stopIco.style.display='none';
+    startBtn.classList.remove('playing'); drawLEDs();
+  }
+  startBtn.disabled=true;startBtn.style.opacity='.3';startBtn.style.pointerEvents='none';
+  tapBtn.disabled=true;tapBtn.style.opacity='.3';tapBtn.style.pointerEvents='none';
+  tunerActive=true;
+  tunerToggleBtn.classList.add('active');
+  tunerDisplay.classList.add('on');
+  tunerInactiveMsg.style.display='none';
+  tunerActiveContent.style.display='flex';
+  startTuner();
+  showToast('HANGOLÓGÉP AKTÍV');
+}
+
+function deactivateTuner(){
+  tunerActive=false; stopTuner();
+  tunerToggleBtn.classList.remove('active');
+  tunerDisplay.classList.remove('on');
+  tunerInactiveMsg.style.display='flex';
+  tunerActiveContent.style.display='none';
+  tunerNoteEl.textContent='—';tunerOctaveEl.textContent='';tunerFreqEl.textContent='— Hz';
+  leds.forEach(l=>l.className='t-led');
+  document.getElementById('tuner-cents-val').textContent='0 ¢';
+  document.getElementById('tuner-cents-val').className='';
+  document.getElementById('tuner-status').textContent='—';
+  document.getElementById('tuner-status').className='';
+  startBtn.disabled=false;startBtn.style.opacity='';startBtn.style.pointerEvents='';
+  tapBtn.disabled=false;tapBtn.style.opacity='';tapBtn.style.pointerEvents='';
+  showToast('HANGOLÓGÉP KIKAPCSOLVA');
+}
+
+tunerToggleBtn.addEventListener('click',()=>{
+  tunerActive ? deactivateTuner() : activateTuner();
+});
+
+
+drawLEDs();
+</script>
+</body>
+</html>
