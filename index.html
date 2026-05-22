@@ -364,18 +364,7 @@ input[type=range]::-webkit-slider-thumb{
 
 /* ── KERET VILLANTÁS — néma módban az első ütemre ──
    A .shell-en belső inset gradient shadow jelenik meg röviden. */
-.shell.mute-flash{
-  box-shadow:
-    0 28px 70px rgba(0,0,0,.92),
-    inset 0 1px 0 rgba(255,255,255,.035),
-    inset 0 0 0 3px transparent,
-    inset 0 0 40px 8px rgba(232,201,106,.22);
-  animation: mute-pulse 180ms ease-out forwards;
-}
-@keyframes mute-pulse{
-  0%  { box-shadow: 0 28px 70px rgba(0,0,0,.92), inset 0 1px 0 rgba(255,255,255,.035), inset 0 0 50px 12px rgba(232,201,106,.28); }
-  100%{ box-shadow: 0 28px 70px rgba(0,0,0,.92), inset 0 1px 0 rgba(255,255,255,.035); }
-}
+/* Néma mód keret villantás: Web Animations API kezeli (nincs CSS @keyframes) */
 
 
 /* ── HANGOLÓGÉP ── */
@@ -1162,15 +1151,9 @@ function scheduler(){
 function trigVis(stepIdx){
   if(!isPlaying)return;
   const[top,bot]=activeSplit;
-  // Néma mód keret-villantás: downbeat-nél (stepIdx===0) arany belső fény
-  if(isMuted && stepIdx===0){
-    const sh=document.querySelector('.shell');
-    sh.classList.remove('mute-flash');
-    // reflow trick az újraindításhoz
-    void sh.offsetWidth;
-    sh.classList.add('mute-flash');
-    setTimeout(()=>sh.classList.remove('mute-flash'),220);
-  }
+  // Néma mód keret-villantás: downbeat-nél arany belső fény
+  // Web Animations API: nincs reflow, nem blokkolja a főszálat
+  if(isMuted && stepIdx===0) scheduleMuteFlash();
   for(let i=0;i<6;i++){
     const l1=row1.children[i],l2=row2.children[i];
     if(l1?.dataset.active&&l1.children[0])
@@ -1442,9 +1425,40 @@ tunerToggleBtn.addEventListener('click',()=>{
 
 
 // ══════════════════════════════════════════════════════
-//  NÉMÍTÁS
+//  NÉMÍTÁS + KERET VILLANTÁS
 // ══════════════════════════════════════════════════════
 let isMuted = false;
+
+// A villantáshoz tároljuk a futó animációt hogy cancel()-elni tudjuk
+let _muteFlashAnim = null;
+const _shellEl = document.querySelector('.shell');
+
+// A base box-shadow amit vissza kell állítani az animáció végén
+const _shellBaseShadow = '0 28px 70px rgba(0,0,0,.92), inset 0 1px 0 rgba(255,255,255,.035)';
+const _shellFlashShadow = '0 28px 70px rgba(0,0,0,.92), inset 0 1px 0 rgba(255,255,255,.035), inset 0 0 48px 10px rgba(232,201,106,.30)';
+
+function scheduleMuteFlash(){
+  // requestAnimationFrame: a vizuális frissítés a következő képkockán fut,
+  // NEM blokkolja az aktuális JS tick-et → ütemező zavartalanul fut tovább
+  requestAnimationFrame(()=>{
+    // Előző animáció megszakítása cancel()-lel (nem okoz reflow-t)
+    if(_muteFlashAnim){
+      try{ _muteFlashAnim.cancel(); }catch(e){}
+      _muteFlashAnim = null;
+    }
+    // Web Animations API: GPU-composited, nem igényel className toggle-t
+    // box-shadow sajnos nem GPU-composited, de a RAF wrapper megvédi az ütemezőt
+    _muteFlashAnim = _shellEl.animate([
+      { boxShadow: _shellFlashShadow },
+      { boxShadow: _shellBaseShadow  }
+    ], {
+      duration: 220,
+      easing: 'ease-out',
+      fill: 'forwards'
+    });
+    _muteFlashAnim.onfinish = ()=>{ _muteFlashAnim = null; };
+  });
+}
 const muteBtn     = document.getElementById('mute-btn');
 const soundWaves  = document.getElementById('sound-waves');
 const muteX       = document.getElementById('mute-x');
