@@ -3,6 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Metronome Studio">
+<meta name="theme-color" content="#070709">
 <title>Metronome Studio</title>
 <link rel="icon" type="image/x-icon" href="favicon.ico">
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
@@ -39,21 +44,95 @@ html,body{
   touch-action:manipulation;
   overflow:hidden;
   display:flex;align-items:center;justify-content:center;
+  /* Teljes képernyő: eltüntetjük a böngésző UI-t görgetésre */
+  position:fixed;
+  inset:0;
 }
+
+/* ── LANDSCAPE BLOCK OVERLAY ── */
+#landscape-block{
+  display:none;
+  position:fixed;
+  inset:0;
+  z-index:9999;
+  background:#050507;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:28px;
+  padding:32px;
+}
+#landscape-block.show{display:flex;}
+
+.lb-anim{
+  width:72px;height:72px;
+  position:relative;
+  animation:lb-rock 1.8s ease-in-out infinite;
+}
+@keyframes lb-rock{
+  0%  {transform:rotate(90deg);}
+  40% {transform:rotate(90deg);}
+  60% {transform:rotate(0deg);}
+  100%{transform:rotate(0deg);}
+}
+/* A mobilnak visszafele is kell menni */
+@keyframes lb-rock{
+  0%   {transform:rotate(90deg);}
+  35%  {transform:rotate(90deg);}
+  55%  {transform:rotate(4deg);}
+  65%  {transform:rotate(-4deg);}
+  75%  {transform:rotate(2deg);}
+  85%  {transform:rotate(0deg);}
+  100% {transform:rotate(0deg);}
+}
+
+.lb-text{
+  font-family:var(--ui);
+  font-size:13px;font-weight:700;
+  letter-spacing:.18em;text-transform:uppercase;
+  color:#585870;
+  text-align:center;
+  line-height:1.7;
+  max-width:220px;
+}
+.lb-text strong{
+  display:block;
+  font-size:15px;color:#8888a0;
+  margin-bottom:4px;
+}
+
+/* ── KILÉPÉS GOMB ── */
+.exit-btn{
+  width:30px;height:30px;
+  border-radius:8px;
+  background:linear-gradient(to bottom,#1c1c26,#101014);
+  border:1px solid #20202c;
+  box-shadow:0 2px 6px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.04);
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;flex-shrink:0;
+  transition:transform 70ms,opacity 100ms;
+  color:#585870;
+}
+.exit-btn:hover{color:#8888a0;}
+.exit-btn:active{transform:scale(.88);}
 
 /* ── DEVICE SHELL ──
    Nincs max-height — teljesen kitölti a kijelzőt
    max-width=430px, hogy széles képernyőn ne legyen szétnyújtva */
 .shell{
   width:min(100vw,430px);
+  /* Teljes magasság, safe area figyelembevételével (iPhone notch/Dynamic Island) */
   height:100dvh;
+  padding-top:max(18px, env(safe-area-inset-top));
+  padding-bottom:max(14px, env(safe-area-inset-bottom));
+  padding-left:max(14px, env(safe-area-inset-left));
+  padding-right:max(14px, env(safe-area-inset-right));
   background:linear-gradient(155deg,#13131c 0%,#09090c 55%,#0e0e14 100%);
   border:1px solid #1e1e28;
   border-radius:28px;
   box-shadow:0 28px 70px rgba(0,0,0,.92),inset 0 1px 0 rgba(255,255,255,.035);
   display:flex;
   flex-direction:column;
-  padding:18px 14px 14px;
   gap:var(--gap);
   position:relative;
   user-select:none;
@@ -237,15 +316,39 @@ input[type=range]::-webkit-slider-thumb{
 
 /* ── BOTTOM ── */
 .bottom{display:flex;gap:8px;flex-shrink:0;}
+
+/* TAP és MUTE: majdnem négyzetesek, flex:2 */
 .tap-btn{
   flex:2;padding:0;min-height:56px;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+  display:flex;align-items:center;justify-content:center;
   background:linear-gradient(to bottom,#1c1c26,#101014);
   border:1px solid #20202c;border-radius:14px;
   box-shadow:0 3px 8px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.04);
   transition:transform 70ms;
+  font-size:13px;font-weight:700;letter-spacing:.22em;color:var(--tmd);
 }
 .tap-btn:active{transform:scale(.93);}
+
+/* Némítás gomb */
+#mute-btn{
+  flex:2;min-height:56px;padding:0;
+  display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(to bottom,#1c1c26,#101014);
+  border:1px solid #20202c;border-radius:14px;
+  box-shadow:0 3px 8px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.04);
+  cursor:pointer;transition:all 80ms;
+  color:#585870;
+}
+#mute-btn:active{transform:scale(.93);}
+#mute-btn.muted{
+  background:linear-gradient(to bottom,#1e1a10,#110e08);
+  border-color:#3a3010;
+  color:var(--gold-b);
+  box-shadow:0 3px 8px rgba(0,0,0,.55),
+             inset 0 1px 0 rgba(255,255,255,.04),
+             0 0 10px rgba(232,201,106,.08);
+}
+
 #start-btn{
   flex:5;min-height:56px;
   display:flex;align-items:center;justify-content:center;gap:8px;
@@ -257,6 +360,21 @@ input[type=range]::-webkit-slider-thumb{
 #start-btn.playing{
   background:#141420;border:1px solid #5a1a1a;
   box-shadow:0 0 0 1px rgba(255,80,80,.15);
+}
+
+/* ── KERET VILLANTÁS — néma módban az első ütemre ──
+   A .shell-en belső inset gradient shadow jelenik meg röviden. */
+.shell.mute-flash{
+  box-shadow:
+    0 28px 70px rgba(0,0,0,.92),
+    inset 0 1px 0 rgba(255,255,255,.035),
+    inset 0 0 0 3px transparent,
+    inset 0 0 40px 8px rgba(232,201,106,.22);
+  animation: mute-pulse 180ms ease-out forwards;
+}
+@keyframes mute-pulse{
+  0%  { box-shadow: 0 28px 70px rgba(0,0,0,.92), inset 0 1px 0 rgba(255,255,255,.035), inset 0 0 50px 12px rgba(232,201,106,.28); }
+  100%{ box-shadow: 0 28px 70px rgba(0,0,0,.92), inset 0 1px 0 rgba(255,255,255,.035); }
 }
 
 
@@ -544,6 +662,36 @@ input[type=range]::-webkit-slider-thumb{
 </head>
 <body>
 
+<!-- ══ LANDSCAPE BLOCK OVERLAY ══ -->
+<div id="landscape-block">
+  <!-- Animált mobil SVG ikon -->
+  <div class="lb-anim">
+    <svg viewBox="0 0 72 72" fill="none" xmlns="http://www.w3.org/2000/svg" width="72" height="72">
+      <!-- Mobiltelefon körvonal -->
+      <rect x="20" y="8" width="32" height="56" rx="6" ry="6"
+        stroke="#585870" stroke-width="2.5" fill="#0d0d14"/>
+      <!-- Képernyő -->
+      <rect x="24" y="16" width="24" height="36" rx="2" ry="2"
+        fill="#141420"/>
+      <!-- Home indicator -->
+      <rect x="30" y="57" width="12" height="2.5" rx="1.25"
+        fill="#585870"/>
+      <!-- Kamera pont -->
+      <circle cx="36" cy="12" r="1.5" fill="#585870"/>
+      <!-- Forgás nyíl — köré rajzolva -->
+      <path d="M 10 36 A 26 26 0 0 1 62 36"
+        stroke="#6a6a82" stroke-width="2" fill="none"
+        stroke-linecap="round" stroke-dasharray="6 4"/>
+      <polygon points="62,30 62,42 70,36"
+        fill="#6a6a82" opacity="0.8"/>
+    </svg>
+  </div>
+  <div class="lb-text">
+    <strong>FORGASD EL A KÉSZÜLÉKET</strong>
+    Ez az alkalmazás csak álló<br>tájolásban használható.
+  </div>
+</div>
+
 <div class="shell">
   <!-- Sarokcsavarok -->
   <div class="screw" style="top:8px;left:8px;"></div>
@@ -557,9 +705,18 @@ input[type=range]::-webkit-slider-thumb{
       <div class="lbl" style="margin-bottom:2px;">Precision Studio Gear</div>
       <div style="font-size:15px;font-weight:700;letter-spacing:.2em;color:var(--thi);">METRONOME STUDIO</div>
     </div>
-    <div class="clk-badge">
-      <span id="system-led" style="width:7px;height:7px;border-radius:50%;background:rgba(201,168,76,.22);display:block;flex-shrink:0;transition:all 80ms;"></span>
-      <span class="lbl-md" style="color:var(--tmd);">STABIL CLK</span>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <div class="clk-badge">
+        <span id="system-led" style="width:7px;height:7px;border-radius:50%;background:rgba(201,168,76,.22);display:block;flex-shrink:0;transition:all 80ms;"></span>
+        <span class="lbl-md" style="color:var(--tmd);">STABIL CLK</span>
+      </div>
+      <!-- Kilépés gomb -->
+      <button class="exit-btn" id="exit-btn" title="Kilépés">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <line x1="1.5" y1="1.5" x2="10.5" y2="10.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+          <line x1="10.5" y1="1.5" x2="1.5" y2="10.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+        </svg>
+      </button>
     </div>
   </div>
 
@@ -699,19 +856,43 @@ input[type=range]::-webkit-slider-thumb{
     <div class="cg-overlay"></div>
   </div><!-- /tuner-panel -->
 
-  <!-- TAP + START -->
+  <!-- TAP + MUTE + START -->
   <div class="bottom">
+
+    <!-- TAP: csak "TAP" felirat, majdnem négyzetes -->
     <button class="tap-btn glass-frame glass-tap" id="tap-btn" style="overflow:hidden;">
-      <span style="font-size:13px;font-weight:700;letter-spacing:.22em;color:var(--tmd);">TAP</span>
-      <span class="lbl-md" style="color:var(--gold);">TEMPÓ</span>
+      TAP
       <div class="cg-overlay"></div>
     </button>
+
+    <!-- MUTE: áthúzott hangszóró ikon -->
+    <button id="mute-btn" class="glass-frame" style="--g-gloss:0.28;--g-arc-y:-50%;--g-arc-w:160%;--g-bevel:0.45;--g-dust:0.008;overflow:hidden;" title="Némítás">
+      <!-- Áthúzott hangszóró SVG -->
+      <svg id="mute-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <!-- Hangszóró test -->
+        <path d="M11 5L6 9H3v6h3l5 4V5z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" fill="none"/>
+        <!-- Hanghullám (látható ha nem néma) -->
+        <g id="sound-waves">
+          <path d="M15.5 8.5 C16.8 9.8 17.5 11.3 17.5 12 C17.5 12.7 16.8 14.2 15.5 15.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+          <path d="M18.5 6 C20.5 8 21.5 10 21.5 12 C21.5 14 20.5 16 18.5 18" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+        </g>
+        <!-- Áthúzó X — csak néma módban látható -->
+        <g id="mute-x" style="display:none;">
+          <line x1="14" y1="9" x2="21" y2="16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+          <line x1="21" y1="9" x2="14" y2="16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+        </g>
+      </svg>
+      <div class="cg-overlay"></div>
+    </button>
+
+    <!-- START/STOP -->
     <button id="start-btn" class="glass-frame" style="--g-gloss:0.30;--g-arc-y:-55%;--g-arc-w:120%;--g-bevel:0.45;--g-dust:0.006;">
       <svg id="play-icon" width="12" height="12" style="fill:#050507;" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
       <svg id="stop-icon" width="12" height="12" style="fill:#ff5555;display:none;" viewBox="0 0 24 24"><path d="M6 19h12V5H6v14z"/></svg>
       <span id="start-btn-text" style="font-size:13px;font-weight:700;letter-spacing:.22em;color:#050507;">INDÍTÁS</span>
       <div class="cg-overlay"></div>
     </button>
+
   </div>
 
 </div>
@@ -928,6 +1109,12 @@ document.querySelectorAll('.snd-btn').forEach(b=>b.addEventListener('click',()=>
 
 // ── AUDIO ENGINE ──
 function playTick(time,stepIdx){
+  // Néma módban: csak vizuális visszajelzés, hang nélkül
+  const delay=(time-audioCtx.currentTime)*1000;
+  if(isMuted){
+    setTimeout(()=>trigVis(stepIdx),Math.max(0,delay));
+    return;
+  }
   const osc=audioCtx.createOscillator();
   const gn=audioCtx.createGain();
   osc.connect(gn);gn.connect(audioCtx.destination);
@@ -975,6 +1162,15 @@ function scheduler(){
 function trigVis(stepIdx){
   if(!isPlaying)return;
   const[top,bot]=activeSplit;
+  // Néma mód keret-villantás: downbeat-nél (stepIdx===0) arany belső fény
+  if(isMuted && stepIdx===0){
+    const sh=document.querySelector('.shell');
+    sh.classList.remove('mute-flash');
+    // reflow trick az újraindításhoz
+    void sh.offsetWidth;
+    sh.classList.add('mute-flash');
+    setTimeout(()=>sh.classList.remove('mute-flash'),220);
+  }
   for(let i=0;i<6;i++){
     const l1=row1.children[i],l2=row2.children[i];
     if(l1?.dataset.active&&l1.children[0])
@@ -1245,7 +1441,102 @@ tunerToggleBtn.addEventListener('click',()=>{
 });
 
 
+// ══════════════════════════════════════════════════════
+//  NÉMÍTÁS
+// ══════════════════════════════════════════════════════
+let isMuted = false;
+const muteBtn     = document.getElementById('mute-btn');
+const soundWaves  = document.getElementById('sound-waves');
+const muteX       = document.getElementById('mute-x');
+
+function setMute(muted){
+  isMuted = muted;
+  if(muted){
+    muteBtn.classList.add('muted');
+    soundWaves.style.display = 'none';
+    muteX.style.display = 'block';
+  } else {
+    muteBtn.classList.remove('muted');
+    soundWaves.style.display = 'block';
+    muteX.style.display = 'none';
+  }
+}
+
+muteBtn.addEventListener('click', ()=> setMute(!isMuted));
+
 drawLEDs();
+
+// ══════════════════════════════════════════════════════
+//  TELJES KÉPERNYŐ + PORTRAIT LOCK + KILÉPÉS
+// ══════════════════════════════════════════════════════
+
+// ── Teljes képernyős mód kérése (első tapintásra) ──
+function requestFullscreen(){
+  const el = document.documentElement;
+  const req = el.requestFullscreen||el.webkitRequestFullscreen||el.mozRequestFullScreen||el.msRequestFullscreen;
+  if(req) req.call(el).catch(()=>{});
+}
+// iOS Safari: nem támogatja az API-t, de a "Add to Home Screen" elintézi.
+// Első felhasználói interakcióra kérjük (böngésző biztonsági korlát).
+document.body.addEventListener('click', function onFirstClick(){
+  requestFullscreen();
+  document.body.removeEventListener('click', onFirstClick);
+}, {once:true});
+
+// ── Screen Orientation Lock (Portrait) ──
+async function lockPortrait(){
+  if(screen.orientation && screen.orientation.lock){
+    try{ await screen.orientation.lock('portrait'); }
+    catch(e){}  // Desktop böngészőkben meghiúsul — normális
+  }
+}
+// Fullscreen után hívjuk (csak akkor működik fullscreen-ben)
+document.addEventListener('fullscreenchange', ()=>{
+  if(document.fullscreenElement) lockPortrait();
+});
+
+// ── Landscape figyelő ──
+const landscapeBlock = document.getElementById('landscape-block');
+
+function checkOrientation(){
+  const isLandscape = window.matchMedia('(orientation: landscape)').matches
+    || (window.screen.width > window.screen.height && window.innerWidth > window.innerHeight);
+  if(isLandscape){
+    landscapeBlock.classList.add('show');
+  } else {
+    landscapeBlock.classList.remove('show');
+  }
+}
+
+window.addEventListener('orientationchange', () => { setTimeout(checkOrientation, 150); });
+window.addEventListener('resize', checkOrientation);
+checkOrientation(); // Induláskor is ellenőrzés
+
+// ── Kilépés gomb ──
+document.getElementById('exit-btn').addEventListener('click', ()=>{
+  // Metronóm leállítása ha fut
+  if(isPlaying){
+    clearTimeout(timerId);
+    isPlaying=false;
+    startTxt.innerText='INDÍTÁS';startTxt.style.color='#050507';
+    playIco.style.display='block';stopIco.style.display='none';
+    startBtn.classList.remove('playing');
+    drawLEDs();
+  }
+  // Hangológép leállítása ha aktív
+  if(tunerActive) deactivateTuner();
+
+  // Kilépés fullscreenből
+  const exit = document.exitFullscreen||document.webkitExitFullscreen||document.mozCancelFullScreen||document.msExitFullscreen;
+  if(exit && document.fullscreenElement){
+    exit.call(document).catch(()=>{});
+  }
+  // Ha nincs mit bezárni (standalone PWA), vissza az előző oldalra vagy bezárja
+  setTimeout(()=>{
+    if(window.history.length > 1) window.history.back();
+    else window.close();
+  }, 200);
+});
 </script>
 </body>
 </html>
