@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <defs>
+    <radialGradient id="fbg" cx="50%" cy="30%" r="70%">
+      <stop offset="0%" stop-color="#1c1c2a"/>
+      <stop offset="100%" stop-color="#070709"/>
+    </radialGradient>
+    <linearGradient id="ffork" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#f0d878"/>
+      <stop offset="100%" stop-color="#b88c38"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Háttér -->
+  <rect width="32" height="32" rx="7" ry="7" fill="url(#fbg)"/>
+
+  <!-- LED sor — 3 kis pont fenn -->
+  <!-- Arany -->
+  <circle cx="9"  cy="8" r="2.2" fill="#e8c96a" opacity="0.9"/>
+  <!-- Fehér dim -->
+  <circle cx="16" cy="8" r="2.2" fill="#888899" opacity="0.6"/>
+  <!-- Dim/off -->
+  <circle cx="23" cy="8" r="2.2" fill="#252535" opacity="0.8"/>
+
+  <!-- Hangvilla — tiszta, vastag vonalak 32px-en is láthatók -->
+  <!-- Bal ág -->
+  <path d="M12 13 C12 13 10 15 10 18 C10 21 12.5 22.5 14.5 23 L14.5 28"
+    stroke="url(#ffork)" stroke-width="2.2" stroke-linecap="round" fill="none"/>
+  <!-- Jobb ág -->
+  <path d="M20 13 C20 13 22 15 22 18 C22 21 19.5 22.5 17.5 23 L17.5 28"
+    stroke="url(#ffork)" stroke-width="2.2" stroke-linecap="round" fill="none"/>
+  <!-- Fejrész -->
+  <line x1="12" y1="13" x2="20" y2="13"
+    stroke="url(#ffork)" stroke-width="2.2" stroke-linecap="round"/>
+  <!-- Alap -->
+  <line x1="14.5" y1="28" x2="17.5" y2="28"
+    stroke="url(#ffork)" stroke-width="2.2" stroke-linecap="round"/>
+
+  <!-- Finom keret bevel -->
+  <rect width="32" height="32" rx="7" ry="7"
+    fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="1"/>
+  <rect x="0.5" y="0.5" width="31" height="31" rx="6.5" ry="6.5"
+    fill="none" stroke="rgba(0,0,0,0.5)" stroke-width="0.5"/>
+</svg>

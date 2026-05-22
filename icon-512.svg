@@ -1,0 +1,235 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <!-- Fő háttér gradiens: sötét rack-panel fém -->
+    <radialGradient id="bg" cx="50%" cy="30%" r="70%">
+      <stop offset="0%" stop-color="#1a1a28"/>
+      <stop offset="60%" stop-color="#0d0d14"/>
+      <stop offset="100%" stop-color="#070709"/>
+    </radialGradient>
+
+    <!-- Arany ragyogás a hangvillához -->
+    <radialGradient id="forkGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#e8c96a" stop-opacity="0.18"/>
+      <stop offset="100%" stop-color="#e8c96a" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Arany lineáris gradiens a hangvillára -->
+    <linearGradient id="forkGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#f5e090"/>
+      <stop offset="40%" stop-color="#e8c96a"/>
+      <stop offset="100%" stop-color="#a07830"/>
+    </linearGradient>
+
+    <!-- LED glow -->
+    <radialGradient id="ledGold" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#ffe89a"/>
+      <stop offset="60%" stop-color="#e8c96a"/>
+      <stop offset="100%" stop-color="#c9a84c"/>
+    </radialGradient>
+    <radialGradient id="ledOrange" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#ffcf80"/>
+      <stop offset="60%" stop-color="#ff9f43"/>
+      <stop offset="100%" stop-color="#d4722a"/>
+    </radialGradient>
+    <radialGradient id="ledDim" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#252535"/>
+      <stop offset="100%" stop-color="#141420"/>
+    </radialGradient>
+
+    <!-- Külső keret bevel -->
+    <linearGradient id="frameTop" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#282838"/>
+      <stop offset="100%" stop-color="#0e0e16"/>
+    </linearGradient>
+
+    <!-- Üveg overlay gradiens -->
+    <radialGradient id="glass" cx="50%" cy="-20%" r="80%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.07"/>
+      <stop offset="50%" stop-color="#ffffff" stop-opacity="0.02"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Drop shadow filter a hangvillára -->
+    <filter id="forkShadow" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="8" result="blur"/>
+      <feFlood flood-color="#e8c96a" flood-opacity="0.35" result="color"/>
+      <feComposite in="color" in2="blur" operator="in" result="shadow"/>
+      <feMerge>
+        <feMergeNode in="shadow"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <!-- Clip kerekített sarok -->
+    <clipPath id="roundClip">
+      <rect width="512" height="512" rx="108" ry="108"/>
+    </clipPath>
+  </defs>
+
+  <!-- ── ALAP: kerekített négyzet ── -->
+  <g clip-path="url(#roundClip)">
+
+    <!-- Háttér -->
+    <rect width="512" height="512" fill="url(#bg)"/>
+
+    <!-- Finom fém csíkozás (brushed aluminium hatás) -->
+    <rect width="512" height="512" fill="none"
+      style="stroke:none;"
+      opacity="0.04">
+      <!-- brush lines via pattern would need defs — using subtle overlay instead -->
+    </rect>
+
+    <!-- Sávos fém textúra illúziója: nagyon halvány vízszintes vonalak -->
+    <g opacity="0.025">
+      <line x1="0" y1="80"  x2="512" y2="80"  stroke="#8888bb" stroke-width="1"/>
+      <line x1="0" y1="160" x2="512" y2="160" stroke="#8888bb" stroke-width="1"/>
+      <line x1="0" y1="240" x2="512" y2="240" stroke="#8888bb" stroke-width="1"/>
+      <line x1="0" y1="320" x2="512" y2="320" stroke="#8888bb" stroke-width="1"/>
+      <line x1="0" y1="400" x2="512" y2="400" stroke="#8888bb" stroke-width="1"/>
+      <line x1="0" y1="480" x2="512" y2="480" stroke="#8888bb" stroke-width="1"/>
+    </g>
+
+    <!-- ── BELSŐ PANEL — mélyített keret ── -->
+    <rect x="32" y="32" width="448" height="448" rx="72" ry="72"
+      fill="#0a0a10"
+      stroke="#1e1e2c"
+      stroke-width="1.5"/>
+    <!-- Belső panel inset shadow top -->
+    <rect x="32" y="32" width="448" height="448" rx="72" ry="72"
+      fill="none"
+      stroke="#252538"
+      stroke-width="3"
+      opacity="0.5"/>
+
+    <!-- ── LED SOR — 4 aktív + 2 dim ── -->
+    <!-- LED foglalatok -->
+    <!-- Sor középre: y=148, 6 LED 44px távolsággal, össz szélesség=5*44=220, start x = 256-110=146 -->
+    <g>
+      <!-- LED 1 - arany (downbeat) -->
+      <circle cx="146" cy="148" r="16" fill="#0a0a14" stroke="#1a1a28" stroke-width="1.5"/>
+      <circle cx="146" cy="148" r="10" fill="url(#ledGold)"/>
+      <circle cx="146" cy="148" r="10" fill="none" stroke="#f5e090" stroke-width="0.5" opacity="0.6"/>
+      <!-- glow -->
+      <circle cx="146" cy="148" r="22" fill="#e8c96a" opacity="0.12"/>
+
+      <!-- LED 2 - fehér -->
+      <circle cx="190" cy="148" r="16" fill="#0a0a14" stroke="#1a1a28" stroke-width="1.5"/>
+      <circle cx="190" cy="148" r="10" fill="#cccce0"/>
+      <circle cx="190" cy="148" r="18" fill="#d0d0e8" opacity="0.08"/>
+
+      <!-- LED 3 - fehér -->
+      <circle cx="234" cy="148" r="16" fill="#0a0a14" stroke="#1a1a28" stroke-width="1.5"/>
+      <circle cx="234" cy="148" r="10" fill="#cccce0"/>
+      <circle cx="234" cy="148" r="18" fill="#d0d0e8" opacity="0.06"/>
+
+      <!-- LED 4 - fehér dim -->
+      <circle cx="278" cy="148" r="16" fill="#0a0a14" stroke="#1a1a28" stroke-width="1.5"/>
+      <circle cx="278" cy="148" r="10" fill="#aaaabc" opacity="0.7"/>
+
+      <!-- LED 5 - dim/off -->
+      <circle cx="322" cy="148" r="16" fill="#0a0a14" stroke="#161624" stroke-width="1.5"/>
+      <circle cx="322" cy="148" r="10" fill="url(#ledDim)"/>
+
+      <!-- LED 6 - dim/off -->
+      <circle cx="366" cy="148" r="16" fill="#0a0a14" stroke="#161624" stroke-width="1.5"/>
+      <circle cx="366" cy="148" r="10" fill="url(#ledDim)"/>
+    </g>
+
+    <!-- 2. LED sor (lentebb, rövidebb aktív: 2 narancssárga + 4 dim) -->
+    <g>
+      <!-- LED 1 - narancssárga (2. csoport downbeat) -->
+      <circle cx="146" cy="196" r="16" fill="#0a0a14" stroke="#1a1a28" stroke-width="1.5"/>
+      <circle cx="146" cy="196" r="10" fill="url(#ledOrange)"/>
+      <circle cx="146" cy="196" r="22" fill="#ff9f43" opacity="0.10"/>
+
+      <!-- LED 2 - fehér -->
+      <circle cx="190" cy="196" r="16" fill="#0a0a14" stroke="#1a1a28" stroke-width="1.5"/>
+      <circle cx="190" cy="196" r="10" fill="#cccce0" opacity="0.6"/>
+
+      <!-- LED 3-6 dim -->
+      <circle cx="234" cy="196" r="16" fill="#0a0a14" stroke="#161624" stroke-width="1.5"/>
+      <circle cx="234" cy="196" r="10" fill="url(#ledDim)"/>
+      <circle cx="278" cy="196" r="16" fill="#0a0a14" stroke="#161624" stroke-width="1.5"/>
+      <circle cx="278" cy="196" r="10" fill="url(#ledDim)"/>
+      <circle cx="322" cy="196" r="16" fill="#0a0a14" stroke="#161624" stroke-width="1.5"/>
+      <circle cx="322" cy="196" r="10" fill="url(#ledDim)"/>
+      <circle cx="366" cy="196" r="16" fill="#0a0a14" stroke="#161624" stroke-width="1.5"/>
+      <circle cx="366" cy="196" r="10" fill="url(#ledDim)"/>
+    </g>
+
+    <!-- ── ELVÁLASZTÓ VONAL ── -->
+    <line x1="64" y1="230" x2="448" y2="230"
+      stroke="#1c1c2c" stroke-width="1" opacity="0.8"/>
+
+    <!-- ── HANGVILLA — fő ikon elem ── -->
+    <g filter="url(#forkShadow)">
+      <!-- Arany ragyogó aura a hangvilla körül -->
+      <ellipse cx="256" cy="340" rx="90" ry="100" fill="url(#forkGlow)"/>
+
+      <!-- Hangvilla két ága + nyél, Share Tech Mono stílusú precíziós vonalak -->
+      <!-- Bal ág -->
+      <path d="M218 260 C218 260 208 272 208 292 C208 316 222 326 236 332 L236 408"
+        stroke="url(#forkGrad)" stroke-width="9"
+        stroke-linecap="round" stroke-linejoin="round"
+        fill="none"/>
+      <!-- Jobb ág -->
+      <path d="M294 260 C294 260 304 272 304 292 C304 316 290 326 276 332 L276 408"
+        stroke="url(#forkGrad)" stroke-width="9"
+        stroke-linecap="round" stroke-linejoin="round"
+        fill="none"/>
+      <!-- Vízszintes fejrész -->
+      <line x1="218" y1="260" x2="294" y2="260"
+        stroke="url(#forkGrad)" stroke-width="9"
+        stroke-linecap="round"/>
+      <!-- Nyél alap összekötő -->
+      <line x1="236" y1="408" x2="276" y2="408"
+        stroke="url(#forkGrad)" stroke-width="9"
+        stroke-linecap="round"/>
+      <!-- Nyél közép kis tag -->
+      <line x1="256" y1="408" x2="256" y2="428"
+        stroke="url(#forkGrad)" stroke-width="7"
+        stroke-linecap="round"/>
+
+      <!-- BPM szám árnyéka a hangvilla mögött — "120" halványan -->
+      <text x="256" y="388" font-family="'Share Tech Mono', monospace"
+        font-size="62" font-weight="400"
+        text-anchor="middle" fill="#e8c96a" opacity="0.08"
+        letter-spacing="4">120</text>
+    </g>
+
+    <!-- ── RACK CSAVAROK (sarokba) ── -->
+    <!-- Bal felső -->
+    <circle cx="76" cy="76" r="10" fill="#14141e" stroke="#222232" stroke-width="1.5"/>
+    <line x1="72" y1="76" x2="80" y2="76" stroke="#0a0a14" stroke-width="1.5" stroke-linecap="round" transform="rotate(45 76 76)"/>
+    <!-- Jobb felső -->
+    <circle cx="436" cy="76" r="10" fill="#14141e" stroke="#222232" stroke-width="1.5"/>
+    <line x1="432" y1="76" x2="440" y2="76" stroke="#0a0a14" stroke-width="1.5" stroke-linecap="round" transform="rotate(-30 436 76)"/>
+    <!-- Bal alsó -->
+    <circle cx="76" cy="436" r="10" fill="#14141e" stroke="#222232" stroke-width="1.5"/>
+    <line x1="72" y1="436" x2="80" y2="436" stroke="#0a0a14" stroke-width="1.5" stroke-linecap="round" transform="rotate(20 76 436)"/>
+    <!-- Jobb alsó -->
+    <circle cx="436" cy="436" r="10" fill="#14141e" stroke="#222232" stroke-width="1.5"/>
+    <line x1="432" y1="436" x2="440" y2="436" stroke="#0a0a14" stroke-width="1.5" stroke-linecap="round" transform="rotate(-45 436 436)"/>
+
+    <!-- ── ÜVEG OVERLAY (konvex fény) ── -->
+    <rect x="32" y="32" width="448" height="448" rx="72" ry="72"
+      fill="url(#glass)"/>
+    <!-- Bevel élkiemelés -->
+    <rect x="32" y="32" width="448" height="448" rx="72" ry="72"
+      fill="none"
+      stroke="rgba(255,255,255,0.06)"
+      stroke-width="1.5"
+      style="paint-order:stroke;"/>
+    <rect x="33.5" y="33.5" width="445" height="445" rx="71" ry="71"
+      fill="none"
+      stroke="rgba(0,0,0,0.6)"
+      stroke-width="1"/>
+
+  </g>
+
+  <!-- Külső sarok kerekítés és végső keret -->
+  <rect width="512" height="512" rx="108" ry="108"
+    fill="none"
+    stroke="rgba(255,255,255,0.04)"
+    stroke-width="2"/>
+</svg>
