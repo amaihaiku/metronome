@@ -3,11 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Metronome Studio">
-<meta name="theme-color" content="#070709">
+
 <title>Metronome Studio</title>
 <link rel="icon" type="image/x-icon" href="favicon.ico">
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
@@ -44,9 +40,6 @@ html,body{
   touch-action:manipulation;
   overflow:hidden;
   display:flex;align-items:center;justify-content:center;
-  /* Teljes képernyő: eltüntetjük a böngésző UI-t görgetésre */
-  position:fixed;
-  inset:0;
 }
 
 /* ── LANDSCAPE BLOCK OVERLAY ── */
@@ -121,12 +114,8 @@ html,body{
    max-width=430px, hogy széles képernyőn ne legyen szétnyújtva */
 .shell{
   width:min(100vw,430px);
-  /* Teljes magasság, safe area figyelembevételével (iPhone notch/Dynamic Island) */
   height:100dvh;
-  padding-top:max(18px, env(safe-area-inset-top));
-  padding-bottom:max(14px, env(safe-area-inset-bottom));
-  padding-left:max(14px, env(safe-area-inset-left));
-  padding-right:max(14px, env(safe-area-inset-right));
+  padding:18px 14px 14px;
   background:linear-gradient(155deg,#13131c 0%,#09090c 55%,#0e0e14 100%);
   border:1px solid #1e1e28;
   border-radius:28px;
@@ -1448,34 +1437,7 @@ muteBtn.addEventListener('click', ()=> setMute(!isMuted));
 
 drawLEDs();
 
-// ══════════════════════════════════════════════════════
-//  TELJES KÉPERNYŐ + PORTRAIT LOCK + KILÉPÉS
-// ══════════════════════════════════════════════════════
 
-// ── Teljes képernyős mód kérése (első tapintásra) ──
-function requestFullscreen(){
-  const el = document.documentElement;
-  const req = el.requestFullscreen||el.webkitRequestFullscreen||el.mozRequestFullScreen||el.msRequestFullscreen;
-  if(req) req.call(el).catch(()=>{});
-}
-// iOS Safari: nem támogatja az API-t, de a "Add to Home Screen" elintézi.
-// Első felhasználói interakcióra kérjük (böngésző biztonsági korlát).
-document.body.addEventListener('click', function onFirstClick(){
-  requestFullscreen();
-  document.body.removeEventListener('click', onFirstClick);
-}, {once:true});
-
-// ── Screen Orientation Lock (Portrait) ──
-async function lockPortrait(){
-  if(screen.orientation && screen.orientation.lock){
-    try{ await screen.orientation.lock('portrait'); }
-    catch(e){}  // Desktop böngészőkben meghiúsul — normális
-  }
-}
-// Fullscreen után hívjuk (csak akkor működik fullscreen-ben)
-document.addEventListener('fullscreenchange', ()=>{
-  if(document.fullscreenElement) lockPortrait();
-});
 
 // ── Landscape figyelő ──
 const landscapeBlock = document.getElementById('landscape-block');
@@ -1496,7 +1458,6 @@ checkOrientation(); // Induláskor is ellenőrzés
 
 // ── Kilépés gomb ──
 document.getElementById('exit-btn').addEventListener('click', ()=>{
-  // Metronóm leállítása ha fut
   if(isPlaying){
     clearTimeout(timerId);
     isPlaying=false;
@@ -1505,19 +1466,9 @@ document.getElementById('exit-btn').addEventListener('click', ()=>{
     startBtn.classList.remove('playing');
     drawLEDs();
   }
-  // Hangológép leállítása ha aktív
   if(tunerActive) deactivateTuner();
-
-  // Kilépés fullscreenből
-  const exit = document.exitFullscreen||document.webkitExitFullscreen||document.mozCancelFullScreen||document.msExitFullscreen;
-  if(exit && document.fullscreenElement){
-    exit.call(document).catch(()=>{});
-  }
-  // Ha nincs mit bezárni (standalone PWA), vissza az előző oldalra vagy bezárja
-  setTimeout(()=>{
-    if(window.history.length > 1) window.history.back();
-    else window.close();
-  }, 200);
+  if(window.history.length > 1) window.history.back();
+  else window.close();
 });
 </script>
 </body>
